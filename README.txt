@@ -1,3 +1,9 @@
+Mobile Accelerometer Pong
+Tanay Gavankar (tgavanka)
+Jocelyn Kong (jocelynk)
+Sid Soundararajan (ssoundar)
+
+
 To serve yourself:
 Update these files with your hostname:
 static/main.js
