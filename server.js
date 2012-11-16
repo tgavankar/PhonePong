@@ -68,6 +68,9 @@ var sessToId = {};
 passport.use(new PassportLocalStrategy(
     function(username, password, done) {
         var user = idToUser[usernameToId[username]];
+
+        // Create a session ID per user auth and store it for websocket
+        // payload validation.
         var sessId = Math.random().toString(36).substring(7);
         user.sessionId = sessId;
         sessToId[sessId] = user.id;
@@ -120,6 +123,8 @@ io.sockets.on('connection', function(socket){
         // Since io.sockets.* is the *all clients* socket,
         // this is a broadcast message.
         // Broadcast a "receive" event with the data received from "send"
+        // Only rebroadcast if the message is properly signed (i.e.
+        // player matches their sessionID).
         if(idToUser[sessToId[data.sessId]].username === data.player) {
             io.sockets.emit('receive', {player: data.player, velocity: data.velocity});
         }

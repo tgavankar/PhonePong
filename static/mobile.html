@@ -23,33 +23,7 @@
             <input type="submit" value="Log In"/>
         </div>
     </form>
-
-    <script>
-        function callCmd(cmd, args, onSuccessFn, onErrFn) {
-            var request = new XMLHttpRequest();
-            var isAsynchronous = true;
-            var url = "/json/" + cmd;
-            var separator = "?";
-            for (var key in args) {
-                url += separator;
-                url += key + "=" + args[key];
-                separator = "&";
-            }
-            request.open("POST", url, isAsynchronous); //gets are cached
-            request.onload = function(xmlEvent) {
-                var responseObject = JSON.parse(request.response);
-                if ("err" in responseObject) {
-                    console.log(responseObject.err);
-                    onErrFn(responseObject.err);
-                }
-                else {
-                    onSuccessFn(responseObject.result);
-                }
-            };
-            request.send();
-        }
-    </script>
-    
+   
     <script>
     
         function hasSessionCookie(){
@@ -79,6 +53,7 @@
 
 
         $(document).ready(function() {
+            window.util.patchFnBind();
 
             if (hasSessionCookie()) {
                 $('#login').hide();
@@ -89,15 +64,12 @@
                 var sessId = getUserId();
                 var userName = getUserName();
 
-
                 var accelerometer = new Accelerometer();
                 accelerometer.startListening();
 
                 function handleAccel() {
                     var pos = accelerometer.getLast().y;
                     socket.emit('send', {player: userName, sessId: sessId, velocity:pos});
-                    
-                    $('#messageText').val(pos);
                 }
 
                 setInterval(handleAccel, 10);
