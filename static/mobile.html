@@ -1,16 +1,15 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-    <title>Simple client for simple node server</title>
+    <title>Pong Mobile Control</title>
     <script src="jquery-1.8.2.min.js"></script>
-    <script src="http://localhost:3000/socket.io/socket.io.js"></script>
+    <script src="http://popat.res.cmu.edu:3000/socket.io/socket.io.js"></script>
+    <script src="Util.js"></script>
     <script src="Accelerometer.js"></script>
 </head>
 <body>
     <h3 id="txtmsg"></h3>
-    message: <input id="messageText" type="text" />
-    <br>
-    <button id="setButton">set</button>
+    <span id="accel"></span>
     <form id="login" action="/login" method="post">
         <div>
             <label>Username:</label>
@@ -78,29 +77,30 @@
             return getUser()['name'];
         }
 
+
         $(document).ready(function() {
 
-            if (hasSessionCookie()){
-                document.getElementById('login').style.display = 'none';
-
+            if (hasSessionCookie()) {
+                $('#login').hide();
                 $('#txtmsg').text(getUserName());
 
-                var socket = io.connect('http://localhost:3000/');
-                
-                socket.on('receive', function(data) {
-                    console.log(data);
-                });
+                var socket = io.connect('http://popat.res.cmu.edu:3000/');
 
                 var sessId = getUserId();
                 var userName = getUserName();
 
-                $('#setButton').click(function(e) {
-                    e.preventDefault();
-                    // emit to the server the "send" event, with our data object
-                    socket.emit('send', {player: userName, sessId: sessId, velocity:$('#messageText').val()});
+
+                var accelerometer = new Accelerometer();
+                accelerometer.startListening();
+
+                function handleAccel() {
+                    var pos = accelerometer.getLast().y;
+                    socket.emit('send', {player: userName, sessId: sessId, velocity:pos});
                     
-                    $('#messageText').val('');
-                });
+                    $('#messageText').val(pos);
+                }
+
+                setInterval(handleAccel, 10);
             }
 
             

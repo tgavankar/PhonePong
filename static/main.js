@@ -23,7 +23,7 @@ Pong.prototype.init = function() {
     this.ball = new Ball();
 
     // Make a connection to the socket.io server
-    this.socket = io.connect('http://localhost:3000/');
+    this.socket = io.connect('http://popat.res.cmu.edu:3000/');
 
     var ref = this;
     // When getting a "receive" event from the server

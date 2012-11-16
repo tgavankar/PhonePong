@@ -1,5 +1,4 @@
 // simpleExpressServer.js
-// A simple Express server for 15-237.
 
 var fs = require("fs");
 var path = require("path");
@@ -19,19 +18,12 @@ app.configure(function(){
     app.use(express.cookieParser());
     app.use(express.bodyParser());
     app.use(express.methodOverride());
-    app.use(express.session({ secret: 'change me!' }));
+    app.use(express.session({ secret: 'By90asdbAB0' }));
     app.use(passport.initialize());
     app.use(passport.session());
     app.use(flash());
     app.use(app.router);
 });
-
-function processJSONCMD(request, response){
-    var cmd = request.params.cmd;
-    var args = request.query;
-    response.header("Cache-control", "no-cache");
-    cmdHandler(cmd, request.user, args, response);
-}
 
 function serveStaticFile(request, response) {
     //notify the user they're logged in. Necessary because
@@ -60,7 +52,7 @@ process.on("uncaughtException", onUncaughtException);
 //======================================
 
 app.post('/login',
-  passport.authenticate('local', { successRedirect: '/static/simpleClient.html',
+  passport.authenticate('local', { successRedirect: '/static/mobile.html',
                                    failureRedirect: '/static/loginFail.html',
                                    failureFlash: true }));
 
@@ -96,18 +88,6 @@ passport.deserializeUser(function(id, done) {
     done(null, idToUser[id]);
 });
 
-//======================================
-//      general util
-//======================================
-
-function strEndsWith(str, end){
-    return str.substr(-end.length) === end;
-}
-
-function sendObjectAsJSON(response, object){
-    response.write(JSON.stringify(object));
-    response.end();
-}
 
 //======================================
 //      handling uncaught exceptions
@@ -121,18 +101,6 @@ function onUncaughtException(err) {
 //======================================
 //      cmd handler
 //======================================
-
-function cmdHandler(cmd, user, args, response){
-    function onCmdSuccess(result){
-        sendObjectAsJSON(response, {'result':result});
-    }
-
-    function onCmdError(error){
-        sendObjectAsJSON(response, { "err":error });
-    }
-
-    cmdHandlers[cmd](args, user, onCmdSuccess, onCmdError);
-}
 
 
 /*****************************************************/
