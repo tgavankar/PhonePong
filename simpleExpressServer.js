@@ -33,18 +33,17 @@ function processJSONCMD(request, response){
     cmdHandler(cmd, request.user, args, response);
 }
 
-//all so post + get
-app.all('/json/:cmd', processJSONCMD);
-
 function serveStaticFile(request, response) {
     //notify the user they're logged in. Necessary because
     //  we use the same html for logging in and when they're
     //  logged in
     if (request.user !== undefined){
-        response.cookie("user", request.user.id);
+        response.cookie("user", request.user.sessionId);
+        response.cookie("name", request.user.username);
     }
     else {
         response.cookie("user", "none");
+        response.cookie("name", "none");
     }
     console.log("user:", request.user);
     response.sendfile("static/" + request.params.staticFilename);
@@ -70,12 +69,17 @@ var idToUser = [
     { id: 0, username: 'player1', password: 'password', email: 'bob@example.com' },
     { id: 1, username: 'player2', password: 'password', email: 'bob2@example.com' }
 ];
-var usernameToId = { 'player1': 0,
-                     'player2': 1 };
+
+var usernameToId = {'player1': 0, 'player2': 1};
+var sessToId = {};
 
 passport.use(new PassportLocalStrategy(
     function(username, password, done) {
         var user = idToUser[usernameToId[username]];
+        var sessId = Math.random().toString(36).substring(7);
+        user.sessionId = sessId;
+        sessToId[sessId] = user.id;
+
         if (user === undefined)
             return done(null, false, { message: 'Unknown user ' + username });
         if (user.password !== password)
@@ -131,54 +135,25 @@ function cmdHandler(cmd, user, args, response){
 }
 
 
-//======================================
-//      cmd handler functions
-//======================================
+/*****************************************************/
 
-var cmdHandlers = { };
+// Initialize the socket.io library
+// Start the socket.io server on port 3000
+// Remember.. this also serves the socket.io.js file!
+var io = require('socket.io').listen(3000);
 
-cmdHandlers.echo = function(args, user, onSuccess, onError) {
-    var result = "Echo heard: <" + args.msg + ">";
-    onSuccess(result);
-}
-
-cmdHandlers.sum = function(args, user, onSuccess, onError) {
-    var x = Number(args.x);
-    var y = Number(args.y);
-    var result = x+y;
-    onSuccess(result);
-}
-
-cmdHandlers.setMsg = function(args, user, onSuccess, onError) {
-    // save args.msg to the file "msg.txt"
-    function onComplete(err) {
-        if (err) {
-            onError(err);
+// Listen for client connection event
+// io.sockets.* is the global, *all clients* socket
+// For every client that is connected, a separate callback is called
+io.sockets.on('connection', function(socket){
+    // Listen for this client's "send" event
+    // remember, socket.* is for this particular client
+    socket.on('send', function(data) {
+        // Since io.sockets.* is the *all clients* socket,
+        // this is a broadcast message.
+        // Broadcast a "receive" event with the data received from "send"
+        if(idToUser[sessToId[data.sessId]].username === data.player) {
+            io.sockets.emit('receive', {player: data.player, velocity: data.velocity});
         }
-        else {
-            var result = "ok";
-            onSuccess(result);
-        }
-    };
-    if (user === undefined){
-        onError('not authorized!');
-    }
-    else {
-        fs.writeFile(__dirname + "/msg.txt", args.msg, onComplete);
-    }
-}
-
-cmdHandlers.getMsg = function(args, user, onSuccess, onError) {
-    // load args.msg from the file "msg.txt"
-    function onComplete(err, data) {
-        if (err) {
-            onError(err);
-        }
-        else {
-            var result = data.toString();
-            onSuccess(result);
-        }
-    };
-    fs.readFile(__dirname + "/msg.txt", onComplete);
-}
-
+    });
+});
